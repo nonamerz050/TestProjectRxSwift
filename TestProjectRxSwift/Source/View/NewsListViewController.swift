@@ -10,13 +10,14 @@ import RxCocoa
 
 class NewsListViewController: UIViewController {
     
-//    private let reloadSignal = PublishSubject<Void>()
     private let disposeBag = DisposeBag()
     
-    private let tableView: UITableView = {
-        let tableview = UITableView()
-        tableview.register(NewsTableViewCell.self, forCellReuseIdentifier: NewsTableViewCell.identifier)
-        return tableview
+    private var tableView: UITableView = {
+        let tableView = UITableView()
+        tableView.register(NewsTableViewCell.self, forCellReuseIdentifier: NewsTableViewCell.identifier)
+        tableView.rowHeight = UITableView.automaticDimension
+        tableView.estimatedRowHeight = 200
+        return tableView
     }()
     
     let viewModel: NewsListViewModel!
@@ -38,8 +39,10 @@ class NewsListViewController: UIViewController {
         title = "News"
         view.backgroundColor = .white
         view.addSubview(tableView)
-
-        setupViews()
+        navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .refresh, target: nil, action: nil)
+        
+        setupBindings()
+        setupInput()
     }
     
     override func viewDidLayoutSubviews() {
@@ -50,9 +53,42 @@ class NewsListViewController: UIViewController {
 
 private extension NewsListViewController {
     
-    func setupViews() {
-        Observable.just(300)
-            .bind(to: tableView.rx.rowHeight)
+    func setupBindings() {
+        tableView
+            .rx
+            .modelSelected(Article.self)
+            .subscribe(onNext: { article in
+                if let selectedRowIndexPath = self.tableView.indexPathForSelectedRow {
+                    self.tableView.deselectRow(at: selectedRowIndexPath, animated: true)
+                }
+                self.coordinator.coordinateToCard(article: article)
+            })
+            .disposed(by: disposeBag)
+    }
+    
+    func setupInput() {
+        let refreshSignal = Observable.concat(
+            .just(()),
+            navigationItem.rightBarButtonItem?.rx.tap.asObservable() ?? .empty()
+        )
+            .asDriver(onErrorJustReturn: ())
+        
+        let input = NewsListViewModel.Input(
+            refreshSignal: refreshSignal
+        )
+        viewModel.transform(input) { [weak self] output in
+            self?.setupOutput(output: output)
+        }
+    }
+    
+    func setupOutput(output: NewsListViewModel.Output){
+        output.articlesModel
+            .drive(tableView.rx.items(
+                cellIdentifier: NewsTableViewCell.identifier,
+                cellType: NewsTableViewCell.self)
+            ) { row, article, cell in
+                cell.configureWithArticle(article: article)
+            }
             .disposed(by: disposeBag)
     }
 }
