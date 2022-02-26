@@ -27,9 +27,18 @@ class NewsListCoordinator {
         let navigationController = UINavigationController(rootViewController: rootViewController)
         self.navigationController = navigationController
         navigationController.navigationBar.prefersLargeTitles = true
+        navigationController.navigationItem.rightBarButtonItem = UIBarButtonItem()
         window.rootViewController = navigationController
         window.makeKeyAndVisible()
         
         return .just(())
+    }
+    
+    func coordinateToCard(article: Article) {
+        guard let navigationController = navigationController else { return }
+        let detailsCoodinator = CardCoordinator(navigationController: navigationController, article: article)
+        detailsCoodinator.start()
+            .subscribe()
+            .disposed(by: disposeBag)
     }
 }

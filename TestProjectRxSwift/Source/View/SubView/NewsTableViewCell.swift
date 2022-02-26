@@ -7,6 +7,7 @@
 
 import UIKit
 import Kingfisher
+import SnapKit
 
 class NewsTableViewCell: UITableViewCell {
 
@@ -16,13 +17,6 @@ class NewsTableViewCell: UITableViewCell {
         let label = UILabel()
         label.numberOfLines = 0
         label.font = .systemFont(ofSize: MagicNumbers.x2, weight: .medium)
-        return label
-    }()
-    
-    private lazy var newsSubtitleLabel: UILabel = {
-        let label = UILabel()
-        label.numberOfLines = 0
-        label.font = .systemFont(ofSize: 10, weight: .light)
         return label
     }()
     
@@ -38,7 +32,6 @@ class NewsTableViewCell: UITableViewCell {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         contentView.addSubview(newsImageView)
         contentView.addSubview(newsTitleLabel)
-        contentView.addSubview(newsSubtitleLabel)
     }
     
     required init?(coder: NSCoder) {
@@ -47,24 +40,28 @@ class NewsTableViewCell: UITableViewCell {
     
     override func layoutSubviews() {
         super.layoutSubviews()
-        
-        newsImageView.frame = CGRect(x: 0,
-                                     y: 0,
-                                     width: contentView.frame.size.width,
-                                     height: contentView.frame.size.height / 2)
-        newsTitleLabel.frame = CGRect(x: 10,
-                                      y: 150,
-                                      width: contentView.frame.size.width - 20,
-                                      height: 80)
-        newsSubtitleLabel.frame = CGRect(x: 10,
-                                      y: 230,
-                                      width: contentView.frame.size.width - 20,
-                                      height: 50)
+        setupSubviews()
     }
     
     func configureWithArticle(article: Article) {
         newsImageView.kf.setImage(with: URL(string: article.urlToImage ?? EmptyImage.imgUrl))
         newsTitleLabel.text = article.title
-        newsSubtitleLabel.text = article.content
+    }
+    
+    func setupSubviews() {
+        newsImageView.snp.makeConstraints { make in
+            make.top.equalTo(contentView.snp.top).offset(5)
+            make.leading.equalTo(contentView.snp.leading).offset(5)
+            make.height.equalTo(150)
+            make.width.equalTo(150)
+            make.bottom.equalTo(contentView.snp.bottom).offset(-5)
+        }
+        newsTitleLabel.snp.makeConstraints { make in
+            make.leading.equalTo(newsImageView.snp.trailing).offset(20)
+            make.trailing.equalTo(contentView.snp.trailing).offset(-10)
+            make.height.greaterThanOrEqualTo(100)
+            make.top.equalTo(contentView.snp.top).offset(10)
+            make.bottom.equalTo(contentView.snp.bottom).offset(-10)
+        }
     }
 }
